@@ -40,7 +40,7 @@ class TwitchChat:
 
     def __connect(self):
         """
-        Authorizes user on Twitch IRC. Raises error if failed
+        Authorizes the user on Twitch IRC. Raises error if failed
         """
         if self.__sock:
             self.close_connection()
@@ -145,4 +145,5 @@ class TwitchChat:
         return messages
 
     def close_connection(self):
+        self.__send_command('PART', '#' + self.channel_name)
         self.__sock.close()
