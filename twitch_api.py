@@ -6,16 +6,19 @@ import re
 import socket
 import time
 
-from settings import TWITCH_BOT_USERNAME
-from settings import TWITCH_IRC_HOST
-from settings import TWITCH_IRC_OAUTH
-from settings import TWITCH_IRC_PORT
+from settings import LOGGING_LEVEL
+from settings import (
+    TWITCH_BOT_USERNAME,
+    TWITCH_IRC_HOST,
+    TWITCH_IRC_OAUTH,
+    TWITCH_IRC_PORT
+)
 
 RECV_BUFFER_SIZE = 2048
 TWITCH_ALLOWED_CHARS = '[a-zA-Z0-9_]'
 
 log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
+log.setLevel(LOGGING_LEVEL)
 
 
 class TwitchChat:
@@ -110,12 +113,7 @@ class TwitchChat:
             self.channel_name = channel_name[0]
             log.info('Connected to channel: {}'.format(self.channel_name))
         elif priv_msg:  # it is a private message
-            priv_msg = priv_msg[0]
-            return {
-                'username': priv_msg[0],
-                'channel': priv_msg[1],
-                'message': priv_msg[2]
-            }
+            return priv_msg[0]  # fields: username, channel, message
 
     def join_channel(self, channel_name):
         self.__send_command('JOIN', '#' + channel_name)
@@ -140,7 +138,7 @@ class TwitchChat:
                     messages += [msg]
 
         if messages:
-            log.info('Got {} messages'.format(len(messages)))
+            log.info('Got {} messages in ch. {}'.format(len(messages), self.channel_name))
 
         return messages
 
