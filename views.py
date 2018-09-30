@@ -37,7 +37,7 @@ def stop_tracking_all():
     channels = []
     for channel_name, ct in running_trackers.items():
         ct.shutdown_flag.set()
-        channels += channel_name
+        channels += [channel_name]
 
     return jsonify({
         'message': 'Stopped tracking these channels: {}'.format('\n'.join(channels))
