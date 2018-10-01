@@ -27,18 +27,19 @@ class Chat(pw.Model):
             Chat.insert_many(messages, fields=[Chat.sender, Chat.name, Chat.message]).execute()
 
     @staticmethod
-    def get_messages(channel, window=10):
+    def get_messages(channel, window=10, limit=100):
         """
         Gets messages of the channel that starts from (now - period minutes) time
         :param channel: channel for getting messages
         :param window: period in minutes
+        :param limit: limit messages amount
         :return: list of messages
         """
         dt_start = datetime.datetime.now() - datetime.timedelta(minutes=window)
         messages = [
             rec.message for rec in Chat.select().where(
                 (Chat.time_added >= dt_start) & (Chat.name == channel)
-            )
+            ).limit(limit)
         ]
 
         return messages

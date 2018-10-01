@@ -82,7 +82,8 @@ def ch_stats_mood(channel, window=10):
     :param window: period of time in minutes in which we select messages
     :return: mood
     """
-    msgs = Chat.get_messages(channel, window=window)
+    # !!! limit is for test purposes. Sentiment analysis API is not fast
+    msgs = Chat.get_messages(channel, window=window, limit=10)
 
     mood = {
         'neg': 0,
@@ -101,5 +102,6 @@ def ch_stats_mood(channel, window=10):
                 mood[key] = (val + resp['probability'][key]) / 2
 
     return jsonify({
-        'mood': max(mood, key=mood.get)
+        'mood': max(mood, key=mood.get),
+        'moods': mood
     })
