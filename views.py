@@ -55,7 +55,9 @@ def ch_stats_freq(channel, window=10):
     """
     Counts frequencies of channel messages
 
+    # TODO: Change freq counting type
     !!! This type of freq. counting is not good as it depends on the window.
+    !!! e.g. if the window big enough but there are now messages such old, then freq is low
     !!! But for an example it should be OK.
 
     :param channel: string, channel name
@@ -92,9 +94,10 @@ def ch_stats_mood(channel, window=10):
     }
     for msg in msgs:
         r = requests.post('http://text-processing.com/api/sentiment/', {'text': msg})
+        # TODO: Implement local sentiment analysis
         # !!! this API is open, thus there are limits
-        # moreover relying on outer service is not always good. In production I would implement
-        # local sentiment analysis
+        # !!! moreover relying on outer service is not always good. In production I would implement
+        # !!! local sentiment analysis
         # !!! hopefully, for the test case should be OK
         if r.status_code == 200:
             resp = r.json()
