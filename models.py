@@ -39,7 +39,7 @@ class Chat(pw.Model):
         messages = [
             rec.message for rec in Chat.select().where(
                 (Chat.time_added >= dt_start) & (Chat.name == channel)
-            ).limit(limit)
+            ).order_by(Chat.time_added.desc()).limit(limit)
         ]
 
         return messages

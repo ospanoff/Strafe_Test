@@ -76,7 +76,7 @@ def ch_stats_freq(channel, window=10):
 
 
 @app.route(api_prefix('/stats/<channel>/mood'))
-@app.route(api_prefix('/stats/<channel>/mood/<window>'))
+@app.route(api_prefix('/stats/<channel>/mood/<int:window>'))
 def ch_stats_mood(channel, window=10):
     """
     Computes mood of the channel
