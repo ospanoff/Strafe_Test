@@ -1,38 +1,43 @@
+import requests
 from flask import jsonify
 
-from api_service import ChatTracker
+from api_service import ChatTracker, api_prefix
 from manage import app
+from models import Chat
 
 running_trackers = dict()
 
 
-@app.route('/api/v1.0/track/start/<channel_name>')
+@app.route(api_prefix('/track/start/<channel_name>'))
 def start_tracking(channel_name):
-    ct = ChatTracker(channel_name)
-    ct.start()
-
-    running_trackers[channel_name] = ct
+    if channel_name not in running_trackers:
+        ct = ChatTracker(channel_name)
+        ct.start()
+        running_trackers[channel_name] = ct
+        msg = 'Started tracking {}'.format(channel_name)
+    else:
+        msg = 'Tracking for "{}" is already active'.format(channel_name)
 
     return jsonify({
-        'message': 'Started tracking {}'.format(channel_name)
+        'message': msg
     })
 
 
-@app.route('/api/v1.0/track/stop/<channel_name>')
+@app.route(api_prefix('/track/stop/<channel_name>'))
 def stop_tracking(channel_name):
     ct = running_trackers.get(channel_name, None)
     if ct:
         ct.shutdown_flag.set()
-        message = 'Stopped tracking {}'.format(channel_name)
+        msg = 'Stopped tracking {}'.format(channel_name)
     else:
-        message = 'Channel "{}" was not being tracked'.format(channel_name)
+        msg = 'Channel "{}" was not being tracked'.format(channel_name)
 
     return jsonify({
-        'message': message
+        'message': msg
     })
 
 
-@app.route('/api/v1.0/track/stop_all')
+@app.route(api_prefix('/track/stop_all'))
 def stop_tracking_all():
     channels = []
     for channel_name, ct in running_trackers.items():
@@ -41,4 +46,60 @@ def stop_tracking_all():
 
     return jsonify({
         'message': 'Stopped tracking these channels: {}'.format('\n'.join(channels))
+    })
+
+
+@app.route(api_prefix('/stats/<channel>/freq/'))
+@app.route(api_prefix('/stats/<channel>/freq/<int:window>'))
+def ch_stats_freq(channel, window=10):
+    """
+    Counts frequencies of channel messages
+
+    !!! This type of freq. counting is not good as it depends on the window.
+    !!! But for an example it should be OK.
+
+    :param channel: string, channel name
+    :param window: period of time in minutes in which we select messages
+    :return: freq, messages per min and per sec
+    """
+    if window == 0:
+        window = 10
+
+    msg_num = Chat.get_messages_cnt(channel, window=window)
+
+    return jsonify({
+        'messages per minute': msg_num / window,
+        'messages per second': msg_num / window / 60
+    })
+
+
+@app.route(api_prefix('/stats/<channel>/mood'))
+@app.route(api_prefix('/stats/<channel>/mood/<window>'))
+def ch_stats_mood(channel, window=10):
+    """
+    Computes mood of the channel
+    :param channel: channel name
+    :param window: period of time in minutes in which we select messages
+    :return: mood
+    """
+    msgs = Chat.get_messages(channel, window=window)
+
+    mood = {
+        'neg': 0,
+        'neutral': 0,
+        'pos': 0
+    }
+    for msg in msgs:
+        r = requests.post('http://text-processing.com/api/sentiment/', {'text': msg})
+        # !!! this API is open, thus there are limits
+        # moreover relying on outer service is not always good. In production I would implement
+        # local sentiment analysis
+        # !!! hopefully, for the test case should be OK
+        if r.status_code == 200:
+            resp = r.json()
+            for key, val in mood.items():
+                mood[key] = (val + resp['probability'][key]) / 2
+
+    return jsonify({
+        'mood': max(mood, key=mood.get)
     })
